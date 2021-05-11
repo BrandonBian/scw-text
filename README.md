@@ -1,4 +1,4 @@
-# SCW-finger-text-detection
+# SCW Module 2: A CRAFT-based Automated System for Real-time Human-Machine Interaction Monitoring
 This is the finger-text detection and recognition module for the SCW project.
 
 

@@ -11,6 +11,7 @@ from craft import CRAFT
 from color_utils import CTCLabelConverter, AttnLabelConverter
 from dataset import RawDataset, AlignCollate, ResizeNormalize
 from model import Model
+import math
 
 from utils.datasets import *
 from utils.smartmeter_modbus import *
@@ -348,16 +349,122 @@ def worker_predict_image():
 
                 button_num = con_id + 1
 
-                # Every screen
+                ############### Get the button coordinates using old method
+
+                # Get the boundary limits of the contour corners
                 xmin = np.min(con[:, :, 0])
                 xmax = np.max(con[:, :, 0])
                 ymin = np.min(con[:, :, 1])
                 ymax = np.max(con[:, :, 1])
 
+
+                # Old calculation of button coordinates
                 button_xmin = int(xmin - 0.3 * (xmax - xmin))
                 button_xmax = int(xmax - 1.16 * (xmax - xmin))
                 button_ymin = int(ymin + 0.15 * (ymax - ymin))
                 button_ymax = int(ymax - 0.11 * (ymax - ymin))
+
+                button_width = button_xmax - button_xmin
+                button_height = button_ymax-button_ymin
+
+                if (button_height > 1.5 * button_width): # There is a distortion (i.e. an angle of the camera)
+
+
+                    # The other coordinate for the min and max corners of the text regions
+                    (xmin_, _) = np.where(con[:, :, 0] == xmin)
+                    (xmax_, _) = np.where(con[:, :, 0] == xmax)
+                    (ymin_, _) = np.where(con[:, :, 1] == ymin)
+                    (ymax_, _) = np.where(con[:, :, 1] == ymax)
+
+                    # The corner coordinates for the text region bounding boxes
+
+                    top_corner_x = con[:, :, 0][ymin_[0]]
+                    top_corner_y = ymin
+
+                    left_corner_x = xmin
+                    left_corner_y = con[:, :, 1][xmin_[0]]
+
+                    right_corner_x = xmax
+                    right_corner_y = con[:, :, 1][xmax_[0]]
+
+                    bottom_corner_x = con[:, :, 0][ymax_[0]]
+                    bottom_corner_y = ymax
+
+                    # Draw contours for the text regions (when with angle)
+
+                    pts = np.array([[top_corner_x, top_corner_y], [right_corner_x, right_corner_y], [bottom_corner_x, bottom_corner_y],  [left_corner_x, left_corner_y]], np.int32)
+                    pts = pts.reshape((-1, 1, 2))
+                    cv2.polylines(frame, [pts], True, (0, 255, 255),2)
+
+                    # The width and height of the text regions (approximated)
+
+                    text_region_top_width = top_corner_x - left_corner_x
+                    text_region_bottom_width = right_corner_x - bottom_corner_x
+
+                    text_region_top_height = left_corner_y - top_corner_y
+                    text_region_bottom_height = bottom_corner_y - right_corner_y
+
+                    # Find the coordinates for the buttons (when with angle)
+
+                    if text_region_top_height < text_region_top_width:  # Left-tilted View
+
+
+                        new_button_top_x = left_corner_x - 0.15 * text_region_top_width
+                        new_button_top_y = left_corner_y + 0.15 * text_region_top_height
+
+                        new_button_left_x = left_corner_x - 0.3 * text_region_top_width
+                        new_button_left_y = left_corner_y + 0.3 * text_region_top_height
+
+                        new_button_right_x = bottom_corner_x - 0.15 * text_region_bottom_width
+                        new_button_right_y = bottom_corner_y + 0.15 * text_region_bottom_height
+
+                        new_button_bottom_x = bottom_corner_x - 0.3 * text_region_bottom_width
+                        new_button_bottom_y = bottom_corner_y + 0.3 * text_region_bottom_height
+
+                        # Draw contours for the buttons
+                        pts = np.array([[new_button_top_x, new_button_top_y], [new_button_left_x, new_button_left_y], [new_button_bottom_x, new_button_bottom_y],
+                                        [new_button_right_x, new_button_right_y]], np.int32)
+                        pts = pts.reshape((-1, 1, 2))
+                        cv2.polylines(frame, [pts], True, (0, 255, 0), 2)
+
+                    else: # Right-tilted View
+
+                        # The width and height of the text regions (approximated)
+
+                        text_region_top_width = right_corner_x - top_corner_x
+                        text_region_bottom_width = bottom_corner_x - left_corner_x
+
+                        text_region_top_height = right_corner_y - top_corner_y
+                        text_region_bottom_height = bottom_corner_y - left_corner_y
+
+                        new_button_top_x = top_corner_x - 0.3 * text_region_top_width
+                        new_button_top_y = top_corner_y - 0.3 * text_region_top_height
+
+                        new_button_left_x = left_corner_x - 0.3 * text_region_top_width
+                        new_button_left_y = left_corner_y - 0.3 * text_region_top_height
+
+                        new_button_right_x = top_corner_x - 0.15 * text_region_bottom_width
+                        new_button_right_y = top_corner_y - 0.15 * text_region_bottom_height
+
+                        new_button_bottom_x = left_corner_x - 0.15 * text_region_bottom_width
+                        new_button_bottom_y = left_corner_y - 0.15 * text_region_bottom_height
+
+                        # Draw contours for the buttons
+                        pts = np.array([[new_button_top_x, new_button_top_y], [new_button_left_x, new_button_left_y], [new_button_bottom_x, new_button_bottom_y],
+                                        [new_button_right_x, new_button_right_y]], np.int32)
+                        pts = pts.reshape((-1, 1, 2))
+                        cv2.polylines(frame, [pts], True, (0, 255, 0), 2)
+
+                else: # There is no angled distortion
+
+                    # Draw contours for the text regions (normal without angle)
+                    cv2.drawContours(frame, filtered_contours, -1, (0, 255, 255), 2)
+
+                    # Draw contours for the buttons
+                    pts = np.array([[button_xmin, button_ymin], [button_xmin, button_ymax], [button_xmax, button_ymax],
+                                    [button_xmax, button_ymin]], np.int32)
+                    pts = pts.reshape((-1, 1, 2))
+                    cv2.polylines(frame, [pts], True, (0, 255, 0), 2)
 
                 # The center pixel of the button box
                 center_x = button_xmin + int(0.5 * (button_xmax - button_xmin))
@@ -387,13 +494,20 @@ def worker_predict_image():
                     else:
                         button = False
 
-                cv2.rectangle(frame, (button_xmin, button_ymin), (button_xmax, button_ymax), (0, 255, 0), 2)
+                # Original implementation: use OpenCV rectangle to draw the bounding box
+                # cv2.rectangle(frame, (button_xmin, button_ymin), (button_xmax, button_ymax), (0, 255, 0), 2)
+
+
 
                 # region = np.array(frame[ymin + 5:ymax - 5, xmin + 5:xmax - 5])
                 region = np.array(frame[ymin-5:ymax+5, xmin-5:xmax+5])
-                bboxes_text, polys_text, score_text = test_net(net, region,
-                                                               args.text_threshold, args.link_threshold,
-                                                               args.low_text, args.cuda, args.poly, refine_net)
+
+                try:
+                    bboxes_text, polys_text, score_text = test_net(net, region,
+                                                                   args.text_threshold, args.link_threshold,
+                                                                   args.low_text, args.cuda, args.poly, refine_net)
+                except:
+                    continue
 
                 if len(bboxes_text) != 0:
                     image_tensors = []
@@ -473,16 +587,17 @@ def worker_predict_image():
 
         duration = time.time() - start_time
 
-        grid = cv2.drawContours(frame, filtered_contours, -1, (0, 255, 0), 3)
+        # grid = cv2.drawContours(frame, filtered_contours, -1, (0, 255, 0), 3)
 
+        # cv2.drawContours(frame, filtered_contours, -1, (0, 255, 255), 2)
+        cv2.imwrite(f"results/frame{counter}.jpg", frame) # Save file
 
-
-        print("Duration: ", grid)
+        print("Duration: ",  duration)
         print(f"[Image No.{counter}]: ", final_predict)
 
-        cv2.imshow('image', frame)
-        cv2.waitKey(0)
-        cv2.imwrite("test.jpg", frame)
+        # cv2.imshow('image', frame)
+        # cv2.waitKey(0)
+        # cv2.imwrite("test.jpg", frame)
         counter += 1
 
 

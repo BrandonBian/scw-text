@@ -6,3 +6,8 @@ This is the finger-text detection and recognition module for the Smart Connect W
 
 
 [weight1](https://drive.google.com/file/d/1uPHybaMrCO0iIz_4RAL44vn4iVxdK1xC/view?usp=sharing) and [weight2](https://drive.google.com/file/d/1nn9LtvmkGrpOyMc9r9ZJYiJu6JEbwGB9/view?usp=sharing)
+
+
+This is a demonstration of the finger and text recognition module, which automatically identifies the texts as well as the human's finger positions in real-time for the monitoring of human-machine interactions:
+
+![GIF](finger_detection_demo.gif)

@@ -6,7 +6,7 @@ This repository is the Python implementation regarding the CRAFT-based text reco
 
 The overall workflow of the finger-text detection and recognitionm module is as follows:
 
-![screenshot](finger_detection.pdf)
+![screenshot](finger_detection.PNG)
 
 
 The weights used in this project are here: [weight1](https://drive.google.com/file/d/1uPHybaMrCO0iIz_4RAL44vn4iVxdK1xC/view?usp=sharing) and [weight2](https://drive.google.com/file/d/1nn9LtvmkGrpOyMc9r9ZJYiJu6JEbwGB9/view?usp=sharing)

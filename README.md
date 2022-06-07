@@ -9,7 +9,7 @@ The overall workflow of the finger-text detection and recognitionm module is as 
 ![screenshot](finger_detection.PNG)
 
 
-The weights used in this project are here: [weight1](https://drive.google.com/file/d/1uPHybaMrCO0iIz_4RAL44vn4iVxdK1xC/view?usp=sharing) and [weight2](https://drive.google.com/file/d/1nn9LtvmkGrpOyMc9r9ZJYiJu6JEbwGB9/view?usp=sharing)
+The weights used in this project are here: [weight1](https://drive.google.com/file/d/1uPHybaMrCO0iIz_4RAL44vn4iVxdK1xC/view?usp=sharing) and [weight2](https://drive.google.com/file/d/1nn9LtvmkGrpOyMc9r9ZJYiJu6JEbwGB9/view?usp=sharing). You may also find the refiner model [here](https://drive.google.com/file/d/1XSaFwBkOaFOdtk4Ane3DFyJGPRw6v5bO/view). Put these weights into directory "/weights"
 
 This is a demonstration of the finger and text recognition module, which automatically identifies the texts as well as the human's finger positions in real-time for the monitoring of human-machine interactions:
 
